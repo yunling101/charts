@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}-yonecloud-{{ .Values.serviceSuffix }}
+  labels:
+    app: yonecloud
+{{ include "yonecloud.labels" . | indent 4 }}
+spec:
+  ports:
+    - port: 8080
+  selector:
+    app: yonecloud

@@ -1,0 +1,19 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: ctrmanager-config
+  labels:
+{{ include "yonecloud.labels" . | indent 4 }}
+    app: ctrmanager
+data:
+  config.yml: |-
+    secret_key: "{{ .Values.secretKey }}"
+    oauth_encrypt_key: "SW2YcwTIb9zpOOhoPsMm"
+
+    db_host: "{{ .Values.name }}-mysql-{{ .Values.serviceSuffix }}"
+    db_username: "{{ .Values.mysql.username }}"
+    db_password: "{{ .Values.mysql.password }}"
+    db_port: {{ .Values.mysql.port }}
+    db_database: "{{ .Values.mysql.database }}"
+
+    table_prefix: "{{ .Values.name }}"

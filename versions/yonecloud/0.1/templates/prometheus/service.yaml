@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}-prometheus-{{ .Values.serviceSuffix }}
+  labels:
+    app: prometheus
+{{ include "yonecloud.labels" . | indent 4 }}
+spec:
+  ports:
+    - name: prometheus
+      port: 9090
+    - name: prometheus-plug
+      port: 9097
+  selector:
+    app: prometheus

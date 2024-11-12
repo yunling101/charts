@@ -1,0 +1,52 @@
+kind: ConfigMap
+apiVersion: v1
+metadata:
+  name: yonecloud-config
+  labels:
+{{ include "yonecloud.labels" . | indent 4 }}
+    app: yonecloud
+data:
+  default.ini: |-
+    [Main]
+    api_docs = true
+    debug = {{ .Values.yonecloud.debug }}
+    work_dir = /yoneCloud
+    allow = *
+
+    [Mysql]
+    host = {{ .Values.name }}-mysql-{{ .Values.serviceSuffix }}
+    username = {{ .Values.mysql.username }}
+    password = {{ .Values.mysql.password }}
+    port = {{ .Values.mysql.port }}
+    database = {{ .Values.mysql.database }}
+    table_prefix = {{ .Values.name }}
+
+    [Redis]
+    host = {{ .Values.name }}-redis-{{ .Values.serviceSuffix }}
+    port = {{ .Values.redis.port }}
+    password = {{ .Values.redis.password }}
+    database = 0
+
+    [ControllerManager]
+    address = http://{{ .Values.name }}-ctrmanager-{{ .Values.serviceSuffix }}:9096
+    secret_key = {{ .Values.secretKey }}
+  monitor.yml: |-
+    alertmanager:
+      address: {{ .Values.name }}-alertmanager-{{ .Values.serviceSuffix }}
+      basic_password: ''
+      basic_user: ''
+      plug: http://{{ .Values.name }}-alertmanager-{{ .Values.serviceSuffix }}:9098
+      secret_key: {{ .Values.secretKey }}
+    consul:
+      address: {{ .Values.name }}-consul-{{ .Values.serviceSuffix }}
+      port: 8500
+      token:
+    grafana:
+      address: {{ .Values.grafana.externalURL }}
+      link: 'true'
+    prometheus:
+      address: {{ .Values.name }}-prometheus-{{ .Values.serviceSuffix }}
+      basic_password: ''
+      basic_user: ''
+      plug: http://{{ .Values.name }}-prometheus-{{ .Values.serviceSuffix }}:9097
+      secret_key: {{ .Values.secretKey }}

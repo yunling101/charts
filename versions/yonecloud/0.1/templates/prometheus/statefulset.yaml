@@ -1,0 +1,110 @@
+{{- $prometheus := .Values.persistence.persistentVolumeClaim.prometheus -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.name }}-prometheus
+  labels:
+{{ include "yonecloud.labels" . | indent 4 }}
+    app: prometheus
+spec:
+  replicas: 1
+  serviceName: {{ .Values.name }}-prometheus-{{ .Values.serviceSuffix }}
+  selector:
+    matchLabels:
+      app: prometheus
+  template:
+    metadata:
+      labels:
+        app: prometheus
+    spec:
+      containers:
+        - name: prometheus
+          image: {{ .Values.prometheus.image }}
+          args:
+            - "--config.file=/opt/prometheus/config/prometheus.yml"
+            - "--storage.tsdb.path=/opt/prometheus/data"
+            - "--storage.tsdb.retention.time=1y"
+            - "--web.enable-lifecycle"
+          ports:
+            - containerPort: 9090
+          readinessProbe:
+            initialDelaySeconds: 5
+            tcpSocket:
+              port: 9090
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: data
+              mountPath: /opt/prometheus/data
+            - name: rules
+              mountPath: /opt/prometheus/rules
+            - name: config
+              mountPath: /opt/prometheus/config/prometheus.yml
+              subPath: prometheus.yml
+        - name: prometheus-plug
+          image: {{ .Values.prometheus.imagePlug }}
+          args:
+            - "--prometheus-rules-store-dir=/opt/rules"
+            - "--prometheus-listen-address=http://localhost:9090"
+            - "--prometheus-reload=true"
+          env:
+            - name: SECRET_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.name }}-secret-key
+                  key: SECRET_KEY
+          ports:
+            - containerPort: 9097
+          readinessProbe:
+            initialDelaySeconds: 5
+            tcpSocket:
+              port: 9097
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: rules
+              mountPath: /opt/rules
+      volumes:
+        {{- if not .Values.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+        {{- else if $prometheus.existingClaim }}
+        - name: data
+          persistentVolumeClaim:
+            claimName: {{ $prometheus.existingClaim }}
+        {{- end }}
+        - name: rules
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  type: prometheus-k8s-rules
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 100Mi
+        - name: config
+          configMap:
+            name: prometheus-config
+  {{- if and .Values.persistence.enabled (not $prometheus.existingClaim) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+{{ include "yonecloud.legacy.labels" . | indent 8 }}
+    spec:
+      accessModes:
+        - {{ $prometheus.accessMode | quote }}
+      {{- if $prometheus.storageClass }}
+      {{- if (eq "-" $prometheus.storageClass) }}
+      storageClassName: ""
+      {{- else }}
+      storageClassName: "{{ $prometheus.storageClass }}"
+      {{- end }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ $prometheus.size | quote }}
+  {{- end }}

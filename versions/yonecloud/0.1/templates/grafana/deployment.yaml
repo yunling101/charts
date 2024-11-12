@@ -1,0 +1,65 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ .Values.name }}-grafana
+  labels:
+{{ include "yonecloud.labels" . | indent 4 }}
+    app: grafana
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: grafana
+  template:
+    metadata:
+      labels:
+        app: grafana
+    spec:
+      containers:
+        - name: grafana
+          image: {{ .Values.grafana.image }}
+          ports:
+            - containerPort: 3000
+          readinessProbe:
+            initialDelaySeconds: 5
+            tcpSocket:
+              port: 3000
+            periodSeconds: 10
+            timeoutSeconds: 3
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/grafana
+            - name: plugins
+              mountPath: /var/lib/grafana/plugins
+            - name: config
+              mountPath: /etc/grafana/grafana.ini
+              subPath: grafana.ini
+      volumes:
+        - name: data
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  type: grafana-k8s-data
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi
+                volumeMode: Filesystem
+        - name: plugins
+          ephemeral:
+            volumeClaimTemplate:
+              metadata:
+                labels:
+                  type: grafana-k8s-plugins
+              spec:
+                accessModes:
+                  - ReadWriteOnce
+                resources:
+                  requests:
+                    storage: 1Gi
+        - name: config
+          configMap:
+            name: grafana-config

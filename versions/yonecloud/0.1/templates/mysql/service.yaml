@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ .Values.name }}-mysql-{{ .Values.serviceSuffix }}
+  labels:
+    app: mysql
+{{ include "yonecloud.labels" . | indent 4 }}
+spec:
+  ports:
+    - port: 3306
+  selector:
+    app: mysql

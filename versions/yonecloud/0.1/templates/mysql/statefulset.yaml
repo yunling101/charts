@@ -1,0 +1,74 @@
+{{- $mysql := .Values.persistence.persistentVolumeClaim.mysql -}}
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ .Values.name }}-mysql
+  labels:
+{{ include "yonecloud.labels" . | indent 4 }}
+    app: mysql
+spec:
+  replicas: 1
+  serviceName: {{ .Values.name }}-mysql-{{ .Values.serviceSuffix }}
+  selector:
+    matchLabels:
+      app: mysql
+  template:
+    metadata:
+      labels:
+        app: mysql
+    spec:
+      containers:
+        - image: {{ .Values.mysql.image }}
+          imagePullPolicy: {{ .Values.imagePullPolicy }}
+          name: mysql
+          args:
+            - "--character-set-server=utf8mb4"
+            - "--collation-server=utf8mb4_unicode_ci"
+          ports:
+            - containerPort: 3306
+          readinessProbe:
+            initialDelaySeconds: 5
+            tcpSocket:
+              port: 3306
+            periodSeconds: 10
+            timeoutSeconds: 3
+          env:
+            - name: MYSQL_DATABASE
+              value: {{ .Values.mysql.database }}
+            - name: MYSQL_ROOT_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mysql-config
+                  key: PASSWORD
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/mysql
+      volumes:
+      {{- if not .Values.persistence.enabled }}
+      - name: data
+        emptyDir: {}
+      {{- else if $mysql.existingClaim }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: {{ $mysql.existingClaim }}
+      {{- end }}
+  {{- if and .Values.persistence.enabled (not $mysql.existingClaim) }}
+  volumeClaimTemplates:
+  - metadata:
+      name: data
+      labels:
+{{ include "yonecloud.legacy.labels" . | indent 8 }}
+    spec:
+      accessModes:
+        - {{ $mysql.accessMode | quote }}
+      {{- if $mysql.storageClass }}
+      {{- if (eq "-" $mysql.storageClass) }}
+      storageClassName: ""
+      {{- else }}
+      storageClassName: "{{ $mysql.storageClass }}"
+      {{- end }}
+      {{- end }}
+      resources:
+        requests:
+          storage: {{ $mysql.size | quote }}
+  {{- end }}

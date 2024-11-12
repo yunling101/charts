@@ -1,0 +1,64 @@
+name: yone
+imagePullPolicy: IfNotPresent
+serviceSuffix: svc
+secretKey: CNqgUlxN9L64sez2JKBp96lTCAq7GKsN
+
+persistence:
+  enabled: true
+  persistentVolumeClaim:
+    redis:
+      existingClaim: ""
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 1Gi
+    mysql:
+      existingClaim: ""
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 30Gi
+    prometheus:
+      existingClaim: ""
+      storageClass: ""
+      accessMode: ReadWriteOnce
+      size: 30Gi
+
+yonecloud:
+  image: yunling101/yonecloud:0.1.0
+  debug: false
+
+redis:
+  image: redis:6.0-alpine
+  port: 6379
+  password: ""
+
+mysql:
+  image: mysql:5.7
+  username: root
+  port: 3306
+  database: yonecloud
+  password: "123456"
+
+consul:
+  image: yunling101/consul:1.9.17
+
+alertmanager:
+  image: yunling101/alertmanager:0.27.0
+  imagePlug: yunling101/alertmanager-plug:0.1.0
+
+prometheus:
+  image: yunling101/prometheus:2.54.1
+  imagePlug: yunling101/prometheus-plug:0.1.0
+
+reloader:
+  image: yunling101/config-reloader:0.1.0
+
+grafana:
+  image: grafana/grafana:8.5.27
+  oauthLogin: true
+  oauthAutoLogin: false
+  externalURL: "http://external.example.com:3000"
+
+ctrmanager:
+  image: yunling101/ctrmanager:0.1.0
+  externalURL: "http://external.example.com:9096"
+
