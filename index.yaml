@@ -1,0 +1,16 @@
+apiVersion: v1
+entries:
+  yonecloud:
+  - apiVersion: v1
+    appVersion: 0.1.0
+    created: "2024-11-12T03:44:19.408726883Z"
+    description: yoneCloud chart for Kubernetes
+    digest: 3b4ec72d0f7b472d84eb226dede4397edc7982db8ed4d4c7b691e664e745c5bb
+    name: yonecloud
+    sources:
+    - https://github.com/yunling101/yoneCloud
+    type: application
+    urls:
+    - https://github.com/yunling101/charts/releases/download/yonecloud-0.1/yonecloud-0.1.tgz
+    version: "0.1"
+generated: "2024-11-12T03:44:19.40873588Z"
